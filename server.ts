@@ -159,10 +159,6 @@ app.get('/api/og', (req, res) => {
   res.send(svg);
 });
 
-// Serve frontend assets
-const distPath = path.join(__dirname, 'dist');
-app.use(express.static(distPath));
-
 // Helper for dynamic SEO tag population
 function getSeoMetadata(urlPath: string, host: string) {
   const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
@@ -239,52 +235,71 @@ function getSeoMetadata(urlPath: string, host: string) {
   }
 }
 
-// Catch-all to support SPA Router navigation with dynamic META injection
-app.get('*', (req, res) => {
-  let indexPath = path.join(distPath, 'index.html');
-  if (!fs.existsSync(indexPath)) {
-    indexPath = path.join(__dirname, 'index.html');
+const distPath = path.join(__dirname, 'dist');
+
+async function setupRoutingAndStart() {
+  if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa'
+    });
+    app.use(vite.middlewares);
+  } else {
+    app.use(express.static(distPath));
+
+    // Catch-all to support SPA Router navigation with dynamic META injection
+    app.get('*', (req, res) => {
+      let indexPath = path.join(distPath, 'index.html');
+      if (!fs.existsSync(indexPath)) {
+        indexPath = path.join(__dirname, 'index.html');
+      }
+
+      fs.readFile(indexPath, 'utf8', (err, html) => {
+        if (err) {
+          console.error("[SEO Server Error]", err);
+          return res.sendFile(indexPath);
+        }
+
+        const host = req.get('host') || 'localhost:3000';
+        const seo = getSeoMetadata(req.path, host);
+
+        // Replace the default static title
+        let transformedHtml = html.replace(
+          /<title>.*?<\/title>/i,
+          `<title>${seo.title}</title>`
+        );
+
+        // Dynamic Meta Tags blocks for SEO & Open Graph (OG) representation
+        const metaTags = `
+        <!-- Dynamic SEO Optimization -->
+        <meta name="description" content="${seo.description}" />
+        <meta property="og:title" content="${seo.title}" />
+        <meta property="og:description" content="${seo.description}" />
+        <meta property="og:image" content="${seo.ogImage}" />
+        <meta property="og:image:type" content="image/svg+xml" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="${seo.title}" />
+        <meta name="twitter:description" content="${seo.description}" />
+        <meta name="twitter:image" content="${seo.ogImage}" />
+        <link rel="canonical" href="${req.protocol}://${host}${req.path}" />
+        `;
+
+        // Inject before the end of the <head> tag
+        transformedHtml = transformedHtml.replace('</head>', `${metaTags}\n</head>`);
+
+        res.setHeader('Content-Type', 'text/html');
+        res.send(transformedHtml);
+      });
+    });
   }
 
-  fs.readFile(indexPath, 'utf8', (err, html) => {
-    if (err) {
-      console.error("[SEO Server Error]", err);
-      return res.sendFile(indexPath);
-    }
-
-    const host = req.get('host') || 'localhost:3000';
-    const seo = getSeoMetadata(req.path, host);
-
-    // Replace the default static title
-    let transformedHtml = html.replace(
-      /<title>.*?<\/title>/i,
-      `<title>${seo.title}</title>`
-    );
-
-    // Dynamic Meta Tags blocks for SEO & Open Graph (OG) representation
-    const metaTags = `
-    <!-- Dynamic SEO Optimization -->
-    <meta name="description" content="${seo.description}" />
-    <meta property="og:title" content="${seo.title}" />
-    <meta property="og:description" content="${seo.description}" />
-    <meta property="og:image" content="${seo.ogImage}" />
-    <meta property="og:image:type" content="image/svg+xml" />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${seo.title}" />
-    <meta name="twitter:description" content="${seo.description}" />
-    <meta name="twitter:image" content="${seo.ogImage}" />
-    <link rel="canonical" href="${req.protocol}://${host}${req.path}" />
-    `;
-
-    // Inject before the end of the <head> tag
-    transformedHtml = transformedHtml.replace('</head>', `${metaTags}\n</head>`);
-
-    res.setHeader('Content-Type', 'text/html');
-    res.send(transformedHtml);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[Sacred Server] Operating live on port ${PORT}`);
   });
-});
+}
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[Sacred Server] Operating live on port ${PORT}`);
+setupRoutingAndStart().catch(err => {
+  console.error("Failed to start Sacred Server:", err);
 });

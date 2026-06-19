@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { AreaChart, DollarSign, Calendar, Package, Users, FileText, Check, X, Sparkles, RefreshCw, Eye } from 'lucide-react';
+import { AreaChart, DollarSign, Calendar, Package, Users, FileText, Check, X, Sparkles, RefreshCw, Eye, Lock, LogOut } from 'lucide-react';
+import { motion } from 'motion/react';
 import { Booking, Product, Blog } from '../server/db.ts';
 
 interface AdminDashboardProps {
@@ -11,6 +12,36 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ bookings = [], products = [], blogs = [], newslettersCount = 0, onRefreshAllData }: AdminDashboardProps) {
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('is_admin_authenticated') === 'true';
+    }
+    return false;
+  });
+  const [passcode, setPasscode] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  const handleAdminVerify = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passcode.trim() === "Kunika2026") {
+      setIsAdminAuthenticated(true);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('is_admin_authenticated', 'true');
+      }
+      setLoginError("");
+    } else {
+      setLoginError("Incorrect cosmic coordinate keys. Verify administrative master credentials.");
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAdminAuthenticated(false);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('is_admin_authenticated');
+    }
+    setPasscode("");
+  };
+
   const [activeTab, setActiveTab] = useState<'bookings' | 'store' | 'crm' | 'blog'>('bookings');
   
   // New Product States
@@ -167,6 +198,64 @@ export default function AdminDashboard({ bookings = [], products = [], blogs = [
     );
   };
 
+  if (!isAdminAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 px-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md rounded-2xl border border-amber-500/20 bg-gradient-to-b from-[#111112] to-[#070708] p-8 shadow-2xl text-center space-y-6"
+        >
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/25 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+            <Lock className="h-5 w-5" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-[10px] font-black tracking-[0.25em] text-amber-500 uppercase">Guarded Sanctuary</span>
+            <h2 className="font-serif-lux text-xl font-bold text-amber-100">Executive Console Portal</h2>
+            <p className="text-xs text-gray-400 max-w-xs mx-auto leading-relaxed">
+              Verify your master administrative coordinates to access booking metrics, lead databases, and inventory editors.
+            </p>
+          </div>
+
+          <form onSubmit={handleAdminVerify} className="space-y-4">
+            <div className="space-y-1 text-left">
+              <label className="text-[9px] uppercase font-bold tracking-wider text-gray-500 block">Sanctuary Access Key</label>
+              <input
+                type="password"
+                required
+                value={passcode}
+                onChange={(e) => setPasscode(e.target.value)}
+                placeholder="••••••••••••••"
+                className="w-full rounded bg-[#161619] border border-gray-800 px-4 py-2.5 text-center text-sm tracking-wider focus:border-amber-400/40 outline-none text-amber-300 placeholder-gray-700 font-mono transition-all"
+              />
+            </div>
+
+            {loginError && (
+              <p className="text-[11px] font-medium text-red-400 leading-tight">
+                {loginError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-amber-500 hover:brightness-105 active:scale-95 px-6 py-3 font-semibold text-black uppercase text-xs tracking-widest transition-all cursor-pointer shadow-md shadow-amber-500/10"
+            >
+              Align Coordinates
+            </button>
+          </form>
+
+          <div className="border-t border-gray-950 pt-4 text-center">
+            <p className="text-[10px] text-gray-500 italic">
+              Hint for standard review sessions: <span className="font-mono font-black text-amber-400/70 select-all font-bold">Kunika2026</span>
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* SECTION HEADER */}
@@ -178,14 +267,26 @@ export default function AdminDashboard({ bookings = [], products = [], blogs = [
           <p className="text-sm text-gray-400">Integrated CRM tracker, Crystal stores inventory, and Business intelligence KPI overview.</p>
         </div>
         
-        {/* Dynamic Sync Trigger */}
-        <button
-          onClick={() => { onRefreshAllData(); }}
-          className="mt-3 flex items-center justify-center gap-1.5 rounded-xl border border-gray-800 bg-[#121215] px-4 py-2 text-xs text-amber-400 hover:text-amber-300 focus:outline-none"
-        >
-          <RefreshCw className="h-3 w-3" />
-          Synchronise Nodes
-        </button>
+        <div className="mt-3 flex items-center gap-3">
+          {/* Dynamic Sync Trigger */}
+          <button
+            onClick={() => { onRefreshAllData(); }}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-800 bg-[#121215] px-4 py-2 text-xs text-amber-400 hover:text-amber-300 focus:outline-none cursor-pointer transition-all"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Synchronise Nodes
+          </button>
+
+          {/* Admin logout trigger */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-red-900/40 bg-[#1e1212]/30 hover:bg-[#1e1212]/50 px-4 py-2 text-xs text-red-400 hover:text-red-300 focus:outline-none cursor-pointer transition-all"
+            title="Lock Executive Panel"
+          >
+            <LogOut className="h-3 w-3" />
+            Lock Panel
+          </button>
+        </div>
       </div>
 
       {/* BI OVERVIEW COUNTER PANEL */}

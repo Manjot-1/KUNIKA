@@ -10,9 +10,9 @@ import AdminDashboard from './components/AdminDashboard.tsx';
 import { AboutPage, TestimonialsPage, BlogPage, ResourcesPage, ContactPage } from './components/Pages.tsx';
 
 // Static assets generated via image-generation tool
-const profileImg = '/src/assets/images/kunika_profile_1781863729813.jpg';
-const heroBgImg = '/src/assets/images/mystical_hero_bg_1781863745548.jpg';
-const crystalImg = '/src/assets/images/store_crystal_quartz_1781863762484.jpg';
+import profileImg from './assets/images/kunika_profile_1781863729813.jpg';
+import heroBgImg from './assets/images/mystical_hero_bg_1781863745548.jpg';
+import crystalImg from './assets/images/store_crystal_quartz_1781863762484.jpg';
 
 export default function App() {
   const [activePage, setActivePage] = useState<string>("home");
