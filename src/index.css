@@ -1,0 +1,370 @@
+@import "tailwindcss";
+
+@theme {
+  --color-amber-100: #C9A84C;
+  --color-amber-200: #B79833;
+  --color-amber-300: #A8862F;
+  --color-amber-400: #C9A84C;
+  --color-amber-500: #C9A84C;
+  --color-amber-600: #B79833;
+  --color-amber-700: #A8862F;
+  --color-amber-800: #8C6D13;
+
+  --color-gray-100: #f4f4f5;
+  --color-gray-200: #e4e4e7;
+  --color-gray-300: #d4d4d8;
+  --color-gray-400: #a1a1aa;
+  --color-gray-500: #71717a;
+  --color-gray-600: #52525b;
+  --color-gray-700: #3f3f46;
+  --color-gray-800: #27272a;
+  --color-gray-900: #18181b;
+
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-350: #ccd1cc;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-800: #27272a;
+  --color-zinc-900: #18181b;
+}
+
+/* =========================================================================
+   EXCLUSIVE LIGHT & SOOTHING THEME OVERRIDES (SERENE SPIRITUALITY)
+   Main theme colors:
+   - Soft Cream Base: #FDFBF7
+   - Soft/Light grey/beige highlights: #F5F2EB, #EAE6DF
+   - Muted Sage Green: #8FA89B / #A6BCB0
+   - Charcoal Grey Text: #333333
+   - Gold luxury accents: #C9A84C
+   ========================================================================= */
+
+body {
+  transition: background-color 0.4s ease, color 0.4s ease !important;
+}
+
+:root:not(.dark) {
+  body {
+    background-color: #FDFBF7 !important;
+    color: #333333 !important;
+  }
+
+  /* 1. FORCE CORE BACKGROUNDS TO HIGH-CONTRAST SOOTHING CREAM */
+  div.min-h-screen,
+  main,
+  [class*="bg-[#060608]"],
+  [class*="bg-[#0b0b0c]"],
+  [class*="bg-[#09090C]"],
+  [class*="bg-[#09090b]"],
+  [class*="bg-[#0c0c0e]"],
+  [class*="bg-[#0d0d10]"],
+  [class*="bg-[#101013]"],
+  [class*="bg-[#070708]"],
+  [class*="bg-[#08080a]"],
+  [class*="bg-[#0d0d0f]"],
+  [class*="bg-[#0e0e11]"] {
+    background-color: #FDFBF7 !important;
+    color: #333333 !important;
+  }
+
+  /* 2. BOOTSTRAP LUXURIOUS SAGE GREEN PANEL BACKGROUNDS */
+  /* Muted sage gradient panel for Hero Backdrop and Tarot sections */
+  [class*="bg-gradient-to-r"][class*="from-[#0d0d10]"][class*="to-[#060608]"],
+  [class*="bg-gradient-to-t"][class*="from-[#060608]"],
+  section.relative.rounded-3xl.border.border-amber-500\/10.bg-\[\#09090C\] {
+    background: linear-gradient(135deg, #E6ECE9 0%, #D6E0DA 50%, #C3D0C9 100%) !important;
+    border-color: #8FA89B/30 !important;
+  }
+
+  /* 3. LIGHT GREY/CREAM PANEL WITH REFINED GOLD OUTLINES */
+  [class*="bg-[#121215]"],
+  [class*="bg-[#141418]"],
+  [class*="bg-[#141416]"],
+  [class*="bg-[#141417]"],
+  [class*="bg-[#1c1c1f]"],
+  [class*="bg-[#161619]"],
+  [class*="bg-[#151518]"],
+  [class*="bg-[#101012]"] {
+    background-color: #F5F2EB !important;
+    color: #333333 !important;
+    border-color: #E2E8E4 !important;
+  }
+
+  /* 4. TEXT COLOR TRANSITIONS TO CHARCOAL GREY */
+  div.min-h-screen,
+  p,
+  span:not(.text-transparent),
+  h1:not(.text-transparent),
+  h2:not(.text-transparent),
+  h3:not(.text-transparent),
+  h4:not(.text-transparent),
+  h5:not(.text-transparent),
+  h6:not(.text-transparent),
+  label,
+  a,
+  button,
+  li,
+  td,
+  th,
+  input,
+  textarea,
+  select {
+    color: #333333 !important;
+  }
+
+  /* 5. SPECIFIC GOLD ACCENT EXCLUSIONS FOR ELEVATED CONTRAST */
+  .text-gold,
+  [class*="text-amber-"],
+  [class*="text-yellow-"],
+  [class*="text-yellow-400"],
+  [class*="text-amber-400"],
+  [class*="text-amber-500"],
+  [class*="text-amber-300"],
+  [class*="text-[#C9A84C]"] {
+    color: #C9A84C !important;
+  }
+
+  /* Highlight badge and interactive highlights */
+  [class*="bg-gradient-to-r"][class*="from-amber-500"][class*="to-amber-600"],
+  [class*="bg-amber-500"],
+  [class*="bg-amber-400"] {
+    background: #C9A84C !important;
+    color: #FFFFFF !important;
+  }
+
+  /* Accent badges or glowing effects helper */
+  [class*="border-amber-500/10"],
+  [class*="border-amber-500/20"],
+  [class*="border-amber-500/30"],
+  [class*="border-amber-400/30"],
+  [class*="border-amber-400/10"],
+  [class*="border-amber-500/15"],
+  [class*="border-gray-800"],
+  [class*="border-gray-850"],
+  [class*="border-zinc-800"] {
+    border-color: #E6ECE9 !important; /* Sage grey border line */
+  }
+
+  /* 6. INPUT AND CARD UTILITIES FOR LIGHT INTEGRATION */
+  input, textarea, select {
+    background-color: #FFFFFF !important;
+    color: #333333 !important;
+    border-color: #D6E0DA !important;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: #C9A84C !important;
+    outline: none;
+  }
+
+  /* WhatsApp brand badge */
+  [class*="bg-[#25d366]"] {
+    background-color: #25d366 !important;
+    color: #FFFFFF !important;
+  }
+
+  /* Clean Header shadow & frosted cream style */
+  header.sticky {
+    background-color: rgba(253, 251, 247, 0.9) !important;
+    border-bottom: 1px solid #E6ECE9 !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 4px 20px -5px rgba(201, 168, 76, 0.05) !important;
+  }
+
+  /* Ensure nice gold matching header indicators */
+  header.sticky span.text-amber-500\/80,
+  header.sticky span.tracking-widest {
+    color: #C9A84C !important;
+  }
+
+  /* Floating Chatbot button matching pure style */
+  #chatbot-floating-toggle-btn {
+    background: #C9A84C !important;
+    border-color: #C9A84C !important;
+    color: #FFFFFF !important;
+  }
+
+  /* Admin / Back indicators hover states */
+  button[id*="admin"],
+  button[id*="cta"],
+  #header-admin-portal-link {
+    background-color: #F5F2EB !important;
+    color: #C9A84C !important;
+    border-color: #C9A84C !important;
+  }
+
+  button[id*="admin"]:hover,
+  #header-admin-portal-link:hover {
+    background-color: #C9A84C !important;
+    color: #FFFFFF !important;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #FDFBF7;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #D6E0DA;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #C9A84C;
+  }
+
+  /* =========================================================================
+     LUXURIOUS SOFT GOLD HOVER TRANSITION FOR INTERACTIVE CARDS
+     ========================================================================= */
+
+  /* Target and elevate all primary interactive cards globally */
+  .group.cursor-pointer:hover,
+  [class*="group"][class*="rounded-xl"]:hover,
+  [class*="group"][class*="rounded-2xl"]:hover,
+  [class*="hover:border-amber-400"]:hover,
+  [class*="hover:border-amber-500"]:hover,
+  [class*="hover:border-amber-300"]:hover,
+  [class*="hover:border-amber-200"]:hover,
+  .hover\:border-amber-400\/40:hover,
+  .hover\:border-amber-400\/25:hover,
+  .hover\:border-amber-400\/50:hover,
+  .hover\:border-amber-500\/30:hover,
+  .hover\:border-amber-500\/20:hover,
+  .hover\:border-amber-500\/10:hover,
+  #daily-tarot-section button[id^="tarot-deck-card-"]:hover {
+    border-color: rgba(201, 168, 76, 0.45) !important;
+    box-shadow: 0 12px 30px -4px rgba(201, 168, 76, 0.12), 0 4px 12px -2px rgba(201, 168, 76, 0.06) !important;
+    transform: translateY(-4px) !important;
+  }
+
+  /* =========================================================================
+     DAILY TAROT READING SECTION EXCLUSIVE OVERRIDES AND THEME
+     ========================================================================= */
+
+  #daily-tarot-section {
+    position: relative;
+    background-image: 
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"),
+      radial-gradient(circle at 50% 50%, #FFFCF7 0%, #F8F4EA 70%, #EAE4D5 100%) !important;
+    background-blend-mode: multiply !important;
+    border-color: rgba(201, 168, 76, 0.25) !important;
+    box-shadow: inset 0 0 40px rgba(201, 168, 76, 0.04), 0 10px 40px -10px rgba(143, 168, 155, 0.12) !important;
+  }
+
+  #daily-tarot-section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cpath d='M30 20a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm45 15a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm-50 40a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm35 10a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z' fill='%23C9A84C'/%3E%3C/svg%3E");
+  }
+
+  /* Underneath visual blur element */
+  #daily-tarot-section .absolute.bg-amber-500\/5 {
+    background-color: rgba(201, 168, 76, 0.04) !important;
+  }
+
+  /* Tarot deck cards back / interactive states */
+  #daily-tarot-section button[id^="tarot-deck-card-"] {
+    background-color: #F8F5EE !important;
+    border-color: rgba(201, 168, 76, 0.3) !important;
+  }
+
+  #daily-tarot-section button[id^="tarot-deck-card-"]:hover {
+    border-color: #C9A84C !important;
+    box-shadow: 0 12px 30px rgba(201, 168, 76, 0.18) !important;
+    background-color: #FFFFFF !important;
+  }
+
+  /* Tarot card inner deck decoration */
+  #daily-tarot-section button[id^="tarot-deck-card-"] > div {
+    background: linear-gradient(to bottom, #FFFFFF 0%, #FAF8F4 100%) !important;
+    border-color: rgba(201, 168, 76, 0.15) !important;
+  }
+
+  /* Sparkles, icons and text inside drawing cards to shine in golden luxury */
+  #daily-tarot-section button[id^="tarot-deck-card-"] svg,
+  #daily-tarot-section button[id^="tarot-deck-card-"] div {
+    color: #C9A84C !important;
+  }
+
+  /* Drawn tarot card outer wrap and inner card layout representation */
+  #daily-tarot-section .perspective-1000 > div {
+    background-color: #FFFFFF !important;
+    border-color: #C9A84C !important;
+    box-shadow: 0 15px 35px rgba(201, 168, 76, 0.15) !important;
+  }
+
+  #daily-tarot-section .perspective-1000 > div > div {
+    background: linear-gradient(to bottom, #FFFFFF 0%, #FAF8F4 100%) !important;
+    border-color: rgba(201, 168, 76, 0.25) !important;
+  }
+
+  /* Drawn card title guidance and Arcana indicators */
+  #daily-tarot-section h3.font-serif-lux, 
+  #daily-tarot-section .font-serif-lux,
+  #daily-tarot-section h2.font-serif-lux,
+  #daily-tarot-section h4.font-serif-lux {
+    color: #C9A84C !important;
+    letter-spacing: 0.25em !important;
+    text-transform: uppercase;
+  }
+
+  #daily-tarot-section h1,
+  #daily-tarot-section h2,
+  #daily-tarot-section h3,
+  #daily-tarot-section h4,
+  #daily-tarot-section h5,
+  #daily-tarot-section h6 {
+    letter-spacing: 0.25em !important;
+  }
+
+  #daily-tarot-section p.italic {
+    color: #555555 !important;
+  }
+
+  /* Section details container (The Divine Reading details) */
+  #daily-tarot-section .md\:col-span-8 > div,
+  #daily-tarot-section .lg\:col-span-9 > div {
+    background-color: #FFFFFF !important;
+    border-color: rgba(143, 168, 155, 0.2) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.02) !important;
+  }
+
+  #daily-tarot-section .md\:col-span-8 .border-b,
+  #daily-tarot-section .lg\:col-span-9 .border-b {
+    border-color: #F5F2EB !important;
+  }
+
+  /* Prose or markdown guidance inside the divine reading section */
+  #daily-tarot-section .prose {
+    color: #333333 !important;
+  }
+
+  #daily-tarot-section .prose p {
+    color: #4A4A4A !important;
+  }
+
+  #daily-tarot-section .prose h4 {
+    color: #C9A84C !important; /* Elegant gold brand */
+  }
+
+  /* Reset or Draw Again button */
+  #reset-tarot-draw {
+    color: #C9A84C !important;
+    background-color: #F8F5EE !important;
+    border: 1px solid rgba(201, 168, 76, 0.3) !important;
+    padding: 4px 10px !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease-in-out !important;
+  }
+
+  #reset-tarot-draw:hover {
+    background-color: #C9A84C !important;
+    color: #FFFFFF !important;
+    border-color: #C9A84C !important;
+  }
+}
+
+button#desktop-theme-toggle span {
+  color: #FFFFFF !important;
+}
+
+
