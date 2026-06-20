@@ -107,35 +107,65 @@ export default function CrystalStore({ products = [], onRefreshProducts, cart, s
   // Handle Cart Checkout submit
   const handleCartCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (cart.length === 0 || !customerName || !customerEmail) return;
-
+    if (cart.length === 0) return;
     setIsCheckingOut(true);
 
     try {
-      const payload = {
-        items: cart.map(item => ({ id: item.product.id, name: item.product.name, quantity: item.quantity })),
-        customerDetails: { name: customerName, email: customerEmail, address: shippingAddress },
-        paymentMethod: 'Credit Card'
-      };
-
-      const res = await fetch('/api/checkout', {
+      // Create Razorpay order
+      const orderRes = await fetch('/api/store/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          amount: getSubtotal(),
+          customerEmail,
+          items: cart.map(i => ({ productId: i.product.id, quantity: i.quantity }))
+        })
       });
-      const data = await res.json();
+      const orderData = await orderRes.json();
+      if (!orderData.id) throw new Error('Failed to create order');
 
-      if (data.success) {
-        setOrderReceipt(data);
-        setOrderPlaced(true);
-        setCart([]); // Clear cart
-        if (onRefreshProducts) onRefreshProducts(); // Reload stock counters
-      } else {
-        alert(data.error || "An issue occurred during crystal checkout.");
-      }
+      const options = {
+        key: (window as any).__RAZORPAY_KEY_ID__ || '',
+        amount: orderData.amount,
+        currency: 'INR',
+        name: 'Kunika Gupta Crystal Store',
+        description: `${cart.length} item(s)`,
+        order_id: orderData.id,
+        prefill: { name: customerName, email: customerEmail },
+        theme: { color: '#C9A84C' },
+        handler: async (response: any) => {
+          const verifyRes = await fetch('/api/store/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              orderData: {
+                customerName,
+                customerEmail,
+                shippingAddress,
+                items: cart.map(i => ({ productId: i.product.id, quantity: i.quantity, price: i.product.price }))
+              }
+            })
+          });
+          const verifyData = await verifyRes.json();
+          if (verifyData.success) {
+            setOrderReceipt({ transactionId: response.razorpay_payment_id, customerEmail });
+            setOrderPlaced(true);
+            setCart([]);
+            if (onRefreshProducts) onRefreshProducts();
+          } else {
+            alert('Payment verification failed. Contact support.');
+          }
+        },
+        modal: { ondismiss: () => setIsCheckingOut(false) }
+      };
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
     } catch (err) {
-      console.error(err);
-      alert("Billing synchronization failure.");
+      console.error('Store checkout error:', err);
+      alert('Checkout failed. Please try again.');
     } finally {
       setIsCheckingOut(false);
     }
@@ -234,7 +264,7 @@ export default function CrystalStore({ products = [], onRefreshProducts, cart, s
                       </div>
                       
                       <div className="flex items-center justify-between border-t border-gray-800/30 pt-1.5 mt-1.5">
-                        <span className="text-xs font-bold text-amber-300 font-serif-lux">${crystal.price}</span>
+                        <span className="text-xs font-bold text-amber-300 font-serif-lux">₹{crystal.price}</span>
                         <button
                           onClick={() => addToCart(crystal)}
                           disabled={crystal.stock === 0}
@@ -375,7 +405,7 @@ export default function CrystalStore({ products = [], onRefreshProducts, cart, s
 
                 {/* Price & action block */}
                 <div className="mt-4 flex items-center justify-between border-t border-gray-800/40 pt-3">
-                  <span className="font-serif-lux text-base font-bold text-amber-400">${prod.price}.00</span>
+                  <span className="font-serif-lux text-base font-bold text-amber-400">₹{prod.price}</span>
                   <button
                     type="button"
                     onClick={() => addToCart(prod)}
@@ -427,7 +457,7 @@ export default function CrystalStore({ products = [], onRefreshProducts, cart, s
                             </div>
                             <div>
                               <h4 className="font-semibold text-amber-200 line-clamp-1">{item.product.name}</h4>
-                              <p className="text-[10px] text-amber-400 font-bold">${item.product.price} each</p>
+                              <p className="text-[10px] text-amber-400 font-bold">₹{item.product.price} each</p>
                             </div>
                           </div>
 
@@ -455,7 +485,7 @@ export default function CrystalStore({ products = [], onRefreshProducts, cart, s
                   {/* Total summary */}
                   <div className="flex justify-between font-bold text-sm text-gray-300 mb-4 font-serif-lux">
                     <span>Cart Subtotal:</span>
-                    <span className="text-amber-400 text-base font-bold">${getSubtotal()}.00</span>
+                    <span className="text-amber-400 text-base font-bold">₹{getSubtotal()}</span>
                   </div>
 
                   {/* Customer order form */}
@@ -495,7 +525,7 @@ export default function CrystalStore({ products = [], onRefreshProducts, cart, s
                       className="w-full rounded bg-amber-500 py-3 text-xs font-bold text-black uppercase tracking-widest hover:brightness-105 disabled:opacity-50 mt-4 transition-all"
                       id="cart-submit-checkout-btn"
                     >
-                      {isCheckingOut ? 'Routing payment node...' : `Transact $${getSubtotal()}.00`}
+                      {isCheckingOut ? 'Routing payment node...' : `Transact ₹${getSubtotal()}`}
                     </button>
                   </form>
                 </div>

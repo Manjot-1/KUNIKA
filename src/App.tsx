@@ -640,7 +640,7 @@ export default function App() {
                       <div className="mt-6 border-t border-gray-900 pt-4 flex items-center justify-between">
                         <div className="text-xs">
                           <span className="text-gray-500">Fee Paid:</span>
-                          <p className="font-serif-lux text-base font-bold text-amber-400">${srv.price}</p>
+                          <p className="font-serif-lux text-base font-bold text-amber-400">₹{srv.price}</p>
                         </div>
                         <button
                           onClick={() => handleRouteToBooking(srv.id)}

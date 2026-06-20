@@ -30,6 +30,12 @@ app.post('/api/reviews', apiHandlers.addReview);
 
 app.post('/api/newsletter', apiHandlers.handleNewsletterSignup);
 
+// Razorpay Payment Endpoints
+app.post('/api/payments/create-order', apiHandlers.createPaymentOrder);
+app.post('/api/payments/verify', apiHandlers.verifyPayment);
+app.post('/api/store/create-order', apiHandlers.createStoreOrder);
+app.post('/api/store/verify', apiHandlers.verifyStore);
+
 import fs from 'fs';
 
 // Dynamic Open Graph Image Generator SVG API
@@ -244,6 +250,27 @@ async function setupRoutingAndStart() {
       server: { middlewareMode: true },
       appType: 'spa'
     });
+
+    // Custom middleware to inject Razorpay Key ID in Dev mode
+    app.use(async (req, res, next) => {
+      if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) {
+        try {
+          const indexPath = path.join(__dirname, 'index.html');
+          if (fs.existsSync(indexPath)) {
+            let template = fs.readFileSync(indexPath, 'utf-8');
+            template = await vite.transformIndexHtml(req.url, template);
+            template = template.replace('%RAZORPAY_KEY_ID%', process.env.RAZORPAY_KEY_ID || '');
+            res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+            return;
+          }
+        } catch (err) {
+          next(err);
+          return;
+        }
+      }
+      next();
+    });
+
     app.use(vite.middlewares);
   } else {
     app.use(express.static(distPath));
@@ -288,6 +315,9 @@ async function setupRoutingAndStart() {
 
         // Inject before the end of the <head> tag
         transformedHtml = transformedHtml.replace('</head>', `${metaTags}\n</head>`);
+        
+        // Dynamic replacement of %RAZORPAY_KEY_ID% placeholder under production
+        transformedHtml = transformedHtml.replace('%RAZORPAY_KEY_ID%', process.env.RAZORPAY_KEY_ID || '');
 
         res.setHeader('Content-Type', 'text/html');
         res.send(transformedHtml);

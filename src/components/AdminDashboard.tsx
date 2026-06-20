@@ -298,7 +298,7 @@ export default function AdminDashboard({ bookings = [], products = [], blogs = [
           </div>
           <div>
             <span className="text-[10px] uppercase font-semibold text-gray-500">Gross Intake</span>
-            <p className="font-serif-lux text-xl font-bold text-amber-400 mt-1">${calculateTotalEarnings()}</p>
+            <p className="font-serif-lux text-xl font-bold text-amber-400 mt-1">₹{calculateTotalEarnings()}</p>
           </div>
         </div>
         {/* 2 */}
@@ -393,7 +393,7 @@ export default function AdminDashboard({ bookings = [], products = [], blogs = [
                         <div className="text-gray-250">{booking.date}</div>
                         <div className="text-amber-500 font-medium">{booking.time}</div>
                       </td>
-                      <td className="px-6 py-4 font-bold text-gray-200">${booking.price}</td>
+                      <td className="px-6 py-4 font-bold text-gray-200">₹{booking.price}</td>
                       <td className="px-6 py-4">
                         <span className={`inline-block rounded px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
                           booking.status === 'Approved'

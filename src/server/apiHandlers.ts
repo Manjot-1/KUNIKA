@@ -1,5 +1,24 @@
 import { GoogleGenAI } from "@google/genai";
 import { dbActions, Booking, Product, Blog, Review } from "./db.ts";
+import Razorpay from "razorpay";
+import crypto from "crypto";
+
+let razorpayInstance: Razorpay | null = null;
+function getRazorpay(): Razorpay {
+  if (razorpayInstance) return razorpayInstance;
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) {
+    console.warn("RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is not configured. Running in unconfigured Razorpay fallback mode.");
+    throw new Error("RAZORPAY_CREDENTIALS_MISSING");
+  }
+  // @ts-ignore
+  razorpayInstance = new Razorpay({
+    key_id: keyId,
+    key_secret: keySecret,
+  });
+  return razorpayInstance;
+}
 
 // Helper for lazy loading the Gemini client and preventing crashes if the API key is missing
 let aiClient: GoogleGenAI | null = null;
@@ -336,6 +355,181 @@ export const apiHandlers = {
       }
     } catch (err) {
       return res.status(500).json({ error: "Failed to register newsletter subscription." });
+    }
+  },
+
+  // 8. Razorpay Bookings Integration
+  createPaymentOrder: async (req: any, res: any) => {
+    try {
+      const { amount, currency, notes } = req.body;
+      if (!amount) {
+        return res.status(400).json({ error: "Booking amount is required to generate payment node." });
+      }
+
+      const rzp = getRazorpay();
+      const order = await rzp.orders.create({
+        amount: Math.round(Number(amount) * 100), // paise
+        currency: currency || 'INR',
+        notes: notes || {}
+      });
+
+      return res.json({
+        id: order.id,
+        amount: order.amount,
+        currency: order.currency
+      });
+    } catch (err: any) {
+      console.error("Razorpay order generation failure:", err);
+      // Fallback mode if keys are missing
+      if (err.message === "RAZORPAY_CREDENTIALS_MISSING") {
+        return res.json({
+          id: `fake_order_${Date.now()}__${Math.round(Math.random() * 1000)}`,
+          amount: Math.round(Number(req.body.amount || 150) * 100),
+          currency: 'INR'
+        });
+      }
+      return res.status(500).json({ error: "Mystic payment node initialisation aborted." });
+    }
+  },
+
+  verifyPayment: async (req: any, res: any) => {
+    try {
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingData } = req.body;
+      if (!razorpay_order_id || !razorpay_payment_id || !bookingData) {
+        return res.status(400).json({ error: "Payload coordinates missing for payment verification." });
+      }
+
+      let isVerified = false;
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+      if (!keySecret) {
+        // If razorpay is unconfigured, run in simulation fallback
+        console.warn("Unconfigured signature bypass: RAZORPAY_KEY_SECRET missing.");
+        isVerified = true;
+      } else {
+        const text = razorpay_order_id + '|' + razorpay_payment_id;
+        const generated_signature = crypto
+          .createHmac('sha256', keySecret)
+          .update(text)
+          .digest('hex');
+          
+        isVerified = (generated_signature === razorpay_signature);
+      }
+
+      if (isVerified) {
+        // Register booking
+        const newBooking = dbActions.addBooking({
+          customerName: bookingData.customerName,
+          customerEmail: bookingData.customerEmail,
+          customerPhone: bookingData.customerPhone,
+          customerDob: bookingData.customerDob,
+          customerTob: bookingData.customerTob,
+          customerPob: bookingData.customerPob,
+          serviceId: bookingData.serviceId,
+          serviceName: bookingData.serviceName,
+          date: bookingData.date,
+          time: bookingData.time,
+          price: Number(bookingData.price),
+          duration: Number(bookingData.duration),
+          status: 'Approved', // Mark as auto-approved as payment is complete
+          intent: bookingData.intent
+        });
+
+        return res.json({
+          success: true,
+          message: "Payment successfully verified. Spiritual alignment scheduled.",
+          booking: newBooking
+        });
+      } else {
+        return res.status(400).json({ success: false, error: "Payment verification failed. Invalid secure signature." });
+      }
+    } catch (err) {
+      console.error("Verification processing failed:", err);
+      return res.status(500).json({ error: "Verification system error." });
+    }
+  },
+
+  // 9. Razorpay Store Integration
+  createStoreOrder: async (req: any, res: any) => {
+    try {
+      const { amount, customerEmail, items } = req.body;
+      if (!amount) {
+        return res.status(400).json({ error: "Order subtotal is required." });
+      }
+
+      const rzp = getRazorpay();
+      const order = await rzp.orders.create({
+        amount: Math.round(Number(amount) * 100), // paise
+        currency: 'INR',
+        notes: {
+          customerEmail: customerEmail || "",
+          itemCount: String(items?.length || 0)
+        }
+      });
+
+      return res.json({
+        id: order.id,
+        amount: order.amount,
+        currency: order.currency
+      });
+    } catch (err: any) {
+      console.error("Razorpay store order creation error:", err);
+      if (err.message === "RAZORPAY_CREDENTIALS_MISSING") {
+        return res.json({
+          id: `fake_store_order_${Date.now()}__${Math.round(Math.random() * 1000)}`,
+          amount: Math.round(Number(req.body.amount || 50) * 100),
+          currency: 'INR'
+        });
+      }
+      return res.status(500).json({ error: "Store checkout alignment issue." });
+    }
+  },
+
+  verifyStore: async (req: any, res: any) => {
+    try {
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderData } = req.body;
+      if (!razorpay_order_id || !razorpay_payment_id || !orderData) {
+        return res.status(400).json({ error: "Verification coordinates missing." });
+      }
+
+      let isVerified = false;
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+      if (!keySecret) {
+        console.warn("Unconfigured store signature bypass: secret missing.");
+        isVerified = true;
+      } else {
+        const text = razorpay_order_id + '|' + razorpay_payment_id;
+        const generated_signature = crypto
+          .createHmac('sha256', keySecret)
+          .update(text)
+          .digest('hex');
+          
+        isVerified = (generated_signature === razorpay_signature);
+      }
+
+      if (isVerified) {
+        // Reduce stock counts from db
+        const { items } = orderData;
+        if (items && Array.isArray(items)) {
+          for (const item of items) {
+            if (item.productId) {
+              dbActions.updateProductStock(item.productId, Number(item.quantity) || 1);
+            }
+          }
+        }
+
+        return res.json({
+          success: true,
+          message: "Sacred crystal billing complete.",
+          transactionId: razorpay_payment_id
+        });
+      } else {
+        return res.status(400).json({ success: false, error: "Payment verification aborted." });
+      }
+    } catch (err) {
+      console.error("Verification processing failed:", err);
+      return res.status(500).json({ error: "Billing verification service failure." });
     }
   }
 };

@@ -12,13 +12,13 @@ export interface Service {
 }
 
 export const AVAILABLE_SERVICES: Service[] = [
-  { id: "tarot-career", name: "Career Tarot Alignment", price: 150, duration: 45, category: "Tarot Reading", shortDesc: "Decipher upcoming career transits, career shifts, or financial bottlenecks under major tarot arcs.", benefits: ["Actionable transition deadlines", "Unlocking monetary blockages", "Professional shadow-work tips"] },
-  { id: "relationship-reading", name: "Relationship Destiny Reading", price: 180, duration: 60, category: "Relationship Consultation", shortDesc: "In-depth compatibility analysis mapping communication traps, soul ties, and wedding alignments.", benefits: ["Astrological sync charts", "Identifying communication hurdles", "Karmic partner resolutions"] },
-  { id: "marriage-consult", name: "Marriage Vedic Consultation", price: 200, duration: 60, category: "Astrology", shortDesc: "Vedic kundali matching analyzing household harmony, mutual prosperity indices, and ancestral guidelines.", benefits: ["Detailed Kundali alignment score", "Auspicious wedding date ranges", "Remedial energetic rituals"] },
-  { id: "lifepath-reading", name: "Life Path & Soul Purpose Alignment", price: 160, duration: 45, category: "Life Guidance", shortDesc: "Map your birth nodes (Rahu & Ketu) to uncover past-life energetic blockages and active timelines.", benefits: ["Spiritual coordinate mapping", "Personal calling discovery", "Chakra block analysis"] },
-  { id: "business-forecast", name: "Commercial & Business Forecasts", price: 250, duration: 75, category: "Life Guidance", shortDesc: "Astrological audit of brand names, incorporation dates, launch timelines, and partnership dynamics.", benefits: ["Auspicious launch dates", "Name vibration compliance", "Financial expansion cycles"] },
-  { id: "astrology-session", name: "Natal Chart Comprehensive Reading", price: 140, duration: 45, category: "Astrology", shortDesc: "Comprehensive exploration of your birth planetary houses, planetary shifts, and immediate dasha effects.", benefits: ["Sovereign natal house chart map", "Dasha timeline breakdowns", "Practical gemstone alignment"] },
-  { id: "emergency-consult", name: "Emergency Crisis Alignment", price: 300, duration: 30, category: "Tarot Reading", shortDesc: "Fast-tracked session scheduled within 24 hours to gain immediate direction during heavy stress/transition.", benefits: ["Priority 24hr slot booking", "Immediate core conflict clarity", "Emergency anchoring routine"] }
+  { id: "tarot-career", name: "Career Tarot Alignment", price: 1499, duration: 45, category: "Tarot Reading", shortDesc: "Decipher upcoming career transits, career shifts, or financial bottlenecks under major tarot arcs.", benefits: ["Actionable transition deadlines", "Unlocking monetary blockages", "Professional shadow-work tips"] },
+  { id: "relationship-reading", name: "Relationship Destiny Reading", price: 1999, duration: 60, category: "Relationship Consultation", shortDesc: "In-depth compatibility analysis mapping communication traps, soul ties, and wedding alignments.", benefits: ["Astrological sync charts", "Identifying communication hurdles", "Karmic partner resolutions"] },
+  { id: "marriage-consult", name: "Marriage Vedic Consultation", price: 2999, duration: 60, category: "Astrology", shortDesc: "Vedic kundali matching analyzing household harmony, mutual prosperity indices, and ancestral guidelines.", benefits: ["Detailed Kundali alignment score", "Auspicious wedding date ranges", "Remedial energetic rituals"] },
+  { id: "lifepath-reading", name: "Life Path & Soul Purpose Alignment", price: 1999, duration: 45, category: "Life Guidance", shortDesc: "Map your birth nodes (Rahu & Ketu) to uncover past-life energetic blockages and active timelines.", benefits: ["Spiritual coordinate mapping", "Personal calling discovery", "Chakra block analysis"] },
+  { id: "business-forecast", name: "Commercial & Business Forecasts", price: 3499, duration: 75, category: "Life Guidance", shortDesc: "Astrological audit of brand names, incorporation dates, launch timelines, and partnership dynamics.", benefits: ["Auspicious launch dates", "Name vibration compliance", "Financial expansion cycles"] },
+  { id: "astrology-session", name: "Natal Chart Comprehensive Reading", price: 1499, duration: 45, category: "Astrology", shortDesc: "Comprehensive exploration of your birth planetary houses, planetary shifts, and immediate dasha effects.", benefits: ["Sovereign natal house chart map", "Dasha timeline breakdowns", "Practical gemstone alignment"] },
+  { id: "emergency-consult", name: "Emergency Crisis Alignment", price: 2999, duration: 30, category: "Tarot Reading", shortDesc: "Fast-tracked session scheduled within 24 hours to gain immediate direction during heavy stress/transition.", benefits: ["Priority 24hr slot booking", "Immediate core conflict clarity", "Emergency anchoring routine"] }
 ];
 
 const TIME_SLOTS = ["09:00 AM", "10:30 AM", "12:00 PM", "02:00 PM", "03:30 PM", "05:00 PM", "06:30 PM"];
@@ -49,10 +49,6 @@ export default function BookingSystem({ onSuccess, preselectedServiceId }: Booki
 
   // Payment States
   const [isPaying, setIsPaying] = useState(false);
-  const [cardName, setCardName] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvv, setCardCvv] = useState("");
   const [bookingResult, setBookingResult] = useState<any>(null);
 
   // Auto-generate next 14 days for scheduling
@@ -73,45 +69,87 @@ export default function BookingSystem({ onSuccess, preselectedServiceId }: Booki
   const upcomingDays = getUpcomingDays();
 
   // Handle server booking create
-  const handleBookingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRazorpayPayment = async () => {
     setIsPaying(true);
-
     try {
-      const payload = {
-        customerName: name,
-        customerEmail: email,
-        customerPhone: phone,
-        customerDob: dob,
-        customerTob: tob,
-        customerPob: pob,
-        serviceId: selectedService.id,
-        serviceName: selectedService.name,
-        date: selectedDate,
-        time: selectedTime,
-        price: selectedService.price,
-        duration: selectedService.duration,
-        intent
-      };
-
-      const res = await fetch('/api/bookings', {
+      // Step 1: Create Razorpay order on server
+      const orderRes = await fetch('/api/payments/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          amount: selectedService.price,
+          currency: 'INR',
+          notes: {
+            serviceName: selectedService.name,
+            customerName: name,
+            customerEmail: email,
+            date: selectedDate,
+            time: selectedTime,
+          }
+        })
       });
-      const data = await res.json();
+      const orderData = await orderRes.json();
+      if (!orderData.id) throw new Error('Failed to create payment order');
 
-      if (data.success) {
-        setBookingResult(data.booking);
-        setStep(5);
-        if (onSuccess) onSuccess();
-      } else {
-        alert(data.error || "An error occurred during booking sync.");
-      }
+      // Step 2: Open Razorpay checkout
+      const options = {
+        key: (window as any).__RAZORPAY_KEY_ID__ || '',
+        amount: orderData.amount,
+        currency: 'INR',
+        name: 'Kunika Gupta',
+        description: selectedService.name,
+        order_id: orderData.id,
+        prefill: {
+          name: name,
+          email: email,
+          contact: phone,
+        },
+        theme: { color: '#C9A84C' },
+        handler: async (response: any) => {
+          // Step 3: Verify payment & create booking
+          const verifyRes = await fetch('/api/payments/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              bookingData: {
+                customerName: name,
+                customerEmail: email,
+                customerPhone: phone,
+                customerDob: dob,
+                customerTob: tob,
+                customerPob: pob,
+                serviceId: selectedService.id,
+                serviceName: selectedService.name,
+                date: selectedDate,
+                time: selectedTime,
+                price: selectedService.price,
+                duration: selectedService.duration,
+                intent,
+              }
+            })
+          });
+          const verifyData = await verifyRes.json();
+          if (verifyData.success) {
+            setBookingResult(verifyData.booking);
+            setStep(5);
+            if (onSuccess) onSuccess();
+          } else {
+            alert('Payment verification failed. Please contact support.');
+          }
+        },
+        modal: {
+          ondismiss: () => { setIsPaying(false); }
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
     } catch (err) {
-      console.error(err);
-      alert("Spiritual node synchronisation failure. Please retry shortly.");
-    } finally {
+      console.error('Payment error:', err);
+      alert('Payment initialisation failed. Please try again.');
       setIsPaying(false);
     }
   };
@@ -184,7 +222,7 @@ export default function BookingSystem({ onSuccess, preselectedServiceId }: Booki
                       <span className="rounded bg-amber-400/10 px-2 py-0.5 text-[9px] font-bold tracking-widest text-amber-400 uppercase">
                         {srv.category}
                       </span>
-                      <span className="font-serif-lux text-xl font-bold text-amber-400">${srv.price}</span>
+                      <span className="font-serif-lux text-xl font-bold text-amber-400">₹{srv.price}</span>
                     </div>
 
                     <h4 className="font-serif-lux mt-2 text-base font-semibold text-amber-100 group-hover:text-amber-300 transition-colors">
@@ -252,7 +290,7 @@ export default function BookingSystem({ onSuccess, preselectedServiceId }: Booki
               </div>
               <div className="text-right">
                 <span className="text-xs text-gray-400">{selectedService.duration} mins</span>
-                <p className="font-serif-lux text-base font-bold text-amber-400">${selectedService.price}</p>
+                <p className="font-serif-lux text-base font-bold text-amber-400">₹{selectedService.price}</p>
               </div>
             </div>
 
@@ -450,131 +488,74 @@ export default function BookingSystem({ onSuccess, preselectedServiceId }: Booki
                 type="button"
                 onClick={() => setStep(4)}
                 disabled={!name || !email || !phone}
-                className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-6 py-3 font-semibold text-black hover:brightness-105 disabled:opacity-50 transition-all duration-300 shadow-md"
+                className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-6 py-3 font-semibold text-black hover:brightness-105 disabled:opacity-50 transition-all duration-300 shadow-md cursor-pointer"
                 id="booking-step3-next-btn"
               >
-                Simulated Checkout
+                Review & Pay
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 4: MOCK PAYMENT GATEWAY */}
+        {/* STEP 4: RAZORPAY PAYMENT */}
         {step === 4 && (
-          <form onSubmit={handleBookingSubmit} className="space-y-6">
+          <div className="space-y-6">
             <div className="flex items-center gap-2 border-b border-gray-800 pb-3">
               <CreditCard className="h-5 w-5 text-amber-400" />
-              <h3 className="font-serif-lux text-lg font-bold text-amber-200">Secure Online checkout</h3>
+              <h3 className="font-serif-lux text-lg font-bold text-amber-200">Secure Payment</h3>
             </div>
 
-            {/* Price Detail */}
-            <div className="rounded-xl bg-[#141418] p-5 border border-gray-800 space-y-2 text-sm leading-relaxed">
+            {/* Order Summary */}
+            <div className="rounded-xl bg-[#141418] p-5 border border-gray-800 space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-400">counsel session:</span>
-                <span className="text-gray-200">{selectedService.name} ({selectedService.duration}m)</span>
+                <span className="text-gray-400">Service:</span>
+                <span className="text-gray-200">{selectedService.name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Date & hour:</span>
-                <span className="text-amber-400 font-medium">{selectedDate} @ {selectedTime}</span>
+                <span className="text-gray-400">Duration:</span>
+                <span className="text-gray-200">{selectedService.duration} minutes</span>
               </div>
-              <div className="border-t border-gray-800 pt-2 flex justify-between font-bold text-base mt-2">
-                <span className="text-gray-200">Total charge:</span>
-                <span className="text-amber-400 font-serif-lux">${selectedService.price}.00</span>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Date & Time:</span>
+                <span className="text-amber-400 font-medium">{selectedDate} at {selectedTime}</span>
               </div>
-            </div>
-
-            {/* Mock Credit Card Fields */}
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-amber-400 uppercase">Cardholder Name</label>
-                <input
-                  type="text"
-                  required
-                  value={cardName}
-                  onChange={(e) => setCardName(e.target.value)}
-                  placeholder="Exact name on card"
-                  className="w-full rounded-xl border border-gray-800 bg-[#08080a] px-4 py-3 text-sm text-gray-200 outline-none focus:border-amber-400/50"
-                  id="checkout-card-name"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-amber-400 uppercase">Card Number</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    maxLength={19}
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim())}
-                    placeholder="XXXX XXXX XXXX XXXX"
-                    className="w-full rounded-xl border border-gray-800 bg-[#08080a] pl-4 pr-12 py-3 text-sm text-gray-200 outline-none focus:border-amber-400/50"
-                    id="checkout-card-number"
-                  />
-                  <CreditCard className="absolute right-4 top-3.5 h-5 w-5 text-gray-500" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-semibold text-amber-400 uppercase">Expiry (MM/YY)</label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={5}
-                    placeholder="MM/YY"
-                    value={cardExpiry}
-                    onChange={(e) => setCardExpiry(e.target.value)}
-                    className="w-full rounded-xl border border-gray-800 bg-[#08080a] px-4 py-3 text-sm text-gray-200 outline-none focus:border-amber-400/50 text-center"
-                    id="checkout-card-expiry"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-semibold text-amber-400 uppercase">CVV Code</label>
-                  <input
-                    type="password"
-                    required
-                    maxLength={3}
-                    placeholder="***"
-                    value={cardCvv}
-                    onChange={(e) => setCardCvv(e.target.value)}
-                    className="w-full rounded-xl border border-gray-800 bg-[#08080a] px-4 py-3 text-sm text-gray-200 outline-none focus:border-amber-400/50 text-center"
-                    id="checkout-card-cvv"
-                  />
-                </div>
+              <div className="border-t border-gray-800 pt-3 flex justify-between font-bold text-base">
+                <span className="text-gray-200">Total:</span>
+                <span className="text-amber-400 font-serif-lux">₹{selectedService.price}</span>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="mt-8 flex items-center justify-between border-t border-gray-800/60 pt-5">
+            <p className="text-xs text-gray-500 text-center">
+              🔒 Secured by Razorpay — UPI, Cards, Net Banking, Wallets accepted
+            </p>
+
+            <div className="flex items-center justify-between border-t border-gray-800/60 pt-5">
               <button
                 type="button"
                 onClick={() => setStep(3)}
-                className="text-xs text-gray-400 hover:text-white font-medium focus:outline-none"
+                className="text-xs text-gray-400 hover:text-white font-medium focus:outline-none cursor-pointer"
               >
-                Exit Coordinates
+                Back
               </button>
-              
               <button
-                type="submit"
-                disabled={isPaying || !cardNumber || !cardName}
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3 font-semibold text-black hover:brightness-105 disabled:opacity-50 transition-all duration-300 shadow-[0_4px_12px_rgba(212,175,55,0.25)]"
-                id="booking-form-submit-btn"
+                type="button"
+                disabled={isPaying}
+                onClick={handleRazorpayPayment}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3 font-semibold text-black hover:brightness-105 disabled:opacity-50 transition-all shadow-[0_4px_12px_rgba(212,175,55,0.25)] cursor-pointer"
+                id="booking-razorpay-btn"
               >
                 {isPaying ? (
                   <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent mr-1" />
-                    Completing transaction...
+                    Opening Payment...
                   </>
                 ) : (
-                  <>
-                    Confirm & Transact ${selectedService.price}
-                  </>
+                  <>Pay ₹{selectedService.price} Securely</>
                 )}
               </button>
             </div>
-          </form>
+          </div>
         )}
 
         {/* STEP 5: SUCCESS ORDER */}
